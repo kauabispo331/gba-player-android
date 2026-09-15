@@ -14,7 +14,17 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Descompactar projeto
-        run: unzip -q gba-player-mgba-android.zip
+        run: |
+          ZIP_FILE=$(find . -maxdepth 2 -type f -iname '*mgba*' -print -quit)
+
+          if [ -z "$ZIP_FILE" ]; then
+            echo "ZIP do mGBA não encontrado"
+            find . -maxdepth 2 -type f -print
+            exit 1
+          fi
+
+          echo "Usando o arquivo: $ZIP_FILE"
+          unzip -q "$ZIP_FILE"
 
       - name: Configurar Java
         uses: actions/setup-java@v4
