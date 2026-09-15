@@ -1,4 +1,4 @@
-name: Build APK
+name: Build GBA Player APK
 
 on:
   workflow_dispatch:
@@ -16,18 +16,8 @@ jobs:
       - name: Baixar projeto
         uses: actions/checkout@v4
 
-      - name: Encontrar e descompactar projeto
-        run: |
-          ZIP_FILE=$(find . -maxdepth 2 -type f -iname '*mgba*' -print -quit)
-
-          if [ -z "$ZIP_FILE" ]; then
-            echo "ZIP do mGBA não encontrado"
-            find . -maxdepth 2 -type f -print
-            exit 1
-          fi
-
-          echo "Usando: $ZIP_FILE"
-          unzip -q "$ZIP_FILE"
+      - name: Descompactar projeto
+        run: unzip -q gba-player-android.zip
 
       - name: Configurar Java
         uses: actions/setup-java@v4
@@ -35,35 +25,17 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Instalar componentes Android
-        run: |
-          SDKMANAGER=$(command -v sdkmanager || true)
-
-          if [ -z "$SDKMANAGER" ]; then
-            SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          fi
-
-          yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
-
-          "$SDKMANAGER" --install \
-            "platforms;android-35" \
-            "build-tools;35.0.0" \
-            "ndk;25.2.9519653" \
-            "cmake;3.22.1"
-
       - name: Configurar Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.7'
 
       - name: Compilar APK
-        working-directory: gba-emulator-mgba
+        working-directory: gba-emulator-apk
         run: gradle assembleDebug --no-daemon
 
       - name: Disponibilizar APK
         uses: actions/upload-artifact@v4
         with:
-          name: gba-player-mgba-debug
-          path: gba-emulator-mgba/app/build/outputs/apk/debug/app-debug.apk
-
-
+          name: gba-player-design-debug
+          path: gba-emulator-apk/app/build/outputs/apk/debug/app-debug.apk
