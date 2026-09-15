@@ -5,6 +5,9 @@ on:
   push:
     branches: [ main ]
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -13,7 +16,7 @@ jobs:
       - name: Baixar projeto
         uses: actions/checkout@v4
 
-      - name: Descompactar projeto
+      - name: Encontrar e descompactar projeto
         run: |
           ZIP_FILE=$(find . -maxdepth 2 -type f -iname '*mgba*' -print -quit)
 
@@ -23,7 +26,7 @@ jobs:
             exit 1
           fi
 
-          echo "Usando o arquivo: $ZIP_FILE"
+          echo "Usando: $ZIP_FILE"
           unzip -q "$ZIP_FILE"
 
       - name: Configurar Java
@@ -32,13 +35,21 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Configurar Android
-        uses: android-actions/setup-android@v3
-
-      - name: Instalar NDK e CMake
+      - name: Instalar componentes Android
         run: |
-          yes | sdkmanager --licenses || true
-          sdkmanager "platforms;android-35" "build-tools;35.0.0" "ndk;25.2.9519653" "cmake;3.22.1"
+          SDKMANAGER=$(command -v sdkmanager || true)
+
+          if [ -z "$SDKMANAGER" ]; then
+            SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          fi
+
+          yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
+
+          "$SDKMANAGER" --install \
+            "platforms;android-35" \
+            "build-tools;35.0.0" \
+            "ndk;25.2.9519653" \
+            "cmake;3.22.1"
 
       - name: Configurar Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -54,4 +65,5 @@ jobs:
         with:
           name: gba-player-mgba-debug
           path: gba-emulator-mgba/app/build/outputs/apk/debug/app-debug.apk
+
 
